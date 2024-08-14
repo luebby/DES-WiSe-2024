@@ -1,0 +1,351 @@
+---
+title: "Preismodellierung"
+lang: de
+author: "Ihr Name"
+date: today
+format: 
+  html:
+    toc: true
+    html-math-method: katex
+  pdf:
+    toc: true
+    number-sections: false
+    colorlinks: true 
+    papersize: a4
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(mosaic)
+library(here)
+```
+
+# LEGO Bausteine
+
+Wie kommt eigentlich der Preis für ein LEGO&copy;-Set zustande? Lesen Sie dazu das Statement unter [https://www.lego.com/de-de/service/help/Shopping/how-we-decide-the-prices-of-lego-sets-kA009000001dcamCAA](https://www.lego.com/de-de/service/help/Shopping/how-we-decide-the-prices-of-lego-sets-kA009000001dcamCAA).
+
+Über den Artikel Anna D. Peterson & Laura Ziegler (2021), Building a Multiple Linear Regression Model With LEGO Brick Data, *Journal of Statistics and Data Science Education*, [DOI: 10.1080/26939169.2021.1946450](https://doi.org/10.1080/26939169.2021.1946450) liegt uns hierfür eine Datentabelle von Amazon Preisen für eine zufällige Stichprobe von Produkten vor. Die Stichprobe wurde eingeschränkt auf folgende Serien:^[Siehe ergänzend [https://momsla.com/why-my-daughters-wont-be-playing-with-lego-friends/](https://momsla.com/why-my-daughters-wont-be-playing-with-lego-friends/)]
+
+- Duplo: [https://www.lego.com/de-de/themes/duplo](https://www.lego.com/de-de/themes/duplo)
+
+- City: [https://www.lego.com/de-de/themes/city](https://www.lego.com/de-de/themes/city)
+
+- Friends: [https://www.lego.com/de-de/themes/friends](https://www.lego.com/de-de/themes/friends)
+
+
+<!-- Technischer Hinweis: das Paket here (https://here.r-lib.org/) ermöglicht einen einfacheren Umgang mit Datei(pfaden) innerhalb von RStudio Projekten. Die csv Datei "lego.csv" befindet sich im Projektordner "data". -->
+
+```{r}
+# Datei (inkl. Pfad)
+pfad_lego <- here("data", "lego.csv")
+# Daten einlesen
+lego <- read.csv2(pfad_lego)
+# Datenstruktur
+str(lego)
+# Obere 6 Beobachtungen
+head(lego)
+```
+
+#### Fragen
+
+- Was ist eine Beobachtung der Datentabelle?
+
+- Welche metrischen Variablen liegen in der Datentabelle vor?
+
+***
+
+Zunächst betrachten wir nur die Serien `City` und `Friends` und wir behalten nur die Beobachtungen, für die das Theme ungleich DUPLO ist.
+
+```{r}
+# Beobachtungen der Serie "DUPLO" eliminieren
+lego_sub <- lego |>
+  filter(Theme != "DUPLO")
+```
+
+#### Frage
+
+- Welche Datentabelle hat mehr Beobachtungen: `lego`, `lego_sub`, oder beide gleich?
+
+***
+
+```{r}
+str(lego_sub)
+```
+
+***
+
+## Preismodellierung durch Bauteile
+
+### Lineares Modell
+
+Angenommen (**!**) es gibt einen *linearen* Zusammenhang zwischen der Anzahl Bausteine (`Pieces`), und dem Preis (`Amazon_Price`). 
+Dann wird mathematisch folgendes Modell für die Stichprobe angenommen:
+
+$$y_i = b_0 + b_1 \cdot x_i + e_i$$
+
+#### Fragen
+
+- Wofür steht das $i$?
+
+- Was ist $b_0$?
+
+- Welche Variable (`Pieces`, `Amazon_Price`) ist die abhängige Variable $y$?
+
+### Lineares Modell der Stichprobe
+
+Visuell:
+```{r}
+gf_point(Amazon_Price ~ Pieces, data = lego_sub) |>
+  gf_lm()
+```
+
+Anhand des *Kleinste-Quadrate-Kriteriums* für diese Daten ergeben sich über die Funktion `lm()` folgende Werte:
+
+```{r}
+erg <- lm(Amazon_Price ~ Pieces, data = lego_sub)
+# Geschätze Koeffizenten (coef()) auf 2 Nachkommastellen runden (round()).
+b <- coef(erg) |> round(2)
+b
+```
+
+Für das Modell der Stichprobe
+$$\hat{y}_i = b_0 + b_1 \cdot x_i$$
+ergibt sich:
+$$\hat{y}_i = `r b[1]` + `r b[2]` \cdot x_i$$ 
+
+#### Fragen
+
+- Welchen modellierten Wert hat ein Set mit $x_0=100$ Bauteilen? 
+
+- Gilt immer $\hat{y}_0 = y_0$?
+
+- Wie ändert sich in diesem Modell der Stichprobe der Mittelwert von $y$, wenn ein Bauteil mehr im Set ist?
+
+### Bestimmtheitsmaß
+
+Wie gut die gefundene Gerade die vorliegenden Daten beschreibt, kann mit Hilfe des Bestimmtheitsmaßes $R^2$ bestimmt werden:
+
+$$R^2 = \frac{\sum_{i=1}^n (\hat{y}_i-\bar{y})^2}{\sum_{i=1}^n (y_i-\bar{y})^2} = 1-\frac{\sum_{i=1}^n (y_i-\hat{y}_i)^2}{\sum_{i=1}^n (y_i-\bar{y})^2}$$
+
+```{r}
+r2 <- rsquared(erg) |> round(2)
+r2
+```
+
+$$R^2 = `r r2`$$
+
+#### Frage
+
+- Interpretieren Sie $R^2 = `r r2`$.
+
+### Schätzunsicherheit
+
+In der zugrundeliegenden Population unser Stichprobe, wird mathematisch folgendes Modell für einen linearen Zusammenhang angenommen:
+
+$$y_i = \beta_0 + \beta_1 \cdot x_i + \epsilon_i$$
+
+Die anhand der Stichprobe aus dieser Population berechneten Werte für Achsenabschnitt und Steigung, $b_0, b_1$, können als Schätzwerte für die unbekannten Modellparameter $\beta_0, \beta_1$ im Modell der Population verwendet werden (sogenannte *Punktschätzer*):
+
+$$\hat{\beta}_0=b_0,\,\hat{\beta}_1=b_1.$$
+
+```{r}
+# betadach
+betadach <- b
+```
+
+```{r}
+# Zufallszahlengenerator setzen
+set.seed(1896)
+# Streudiagramm inkl. Regressionsgerade auf einem zufälligen Re-Sample (resample())
+gf_point(Amazon_Price ~ Pieces, data = resample(lego_sub)) |>
+  gf_lm()
+# Zufallszahlengenerator setzen
+set.seed(1896)
+# geschätztes Modell auf drei zufälligen Re-Samples (resample())
+do(3) * lm(Amazon_Price ~ Pieces, data = resample(lego_sub))
+```
+
+#### Frage
+
+- Ergeben sich bei zufälligen Re-Samples dieselben geschätzten Parameter $\hat{\beta}_0, \hat{\beta}_1$?
+
+***
+
+```{r}
+# Zufallszahlengenerator setzen
+set.seed(1896)
+# 1000x Re-Samplen
+Bootvtlg <- do(1000) * lm(Amazon_Price ~ Pieces, data = resample(lego_sub))
+# Obere Beobachtungen
+head(Bootvtlg)
+# Visualisierung Verteilung 
+gf_histogram( ~ Pieces, data = Bootvtlg,
+              # Anpassung Histogramm 
+              bins = 20, center = betadach[2]) |> 
+  # geschätzte Steigung in Originalstichprobe
+  gf_vline(xintercept = betadach[2], color = "blue")
+```
+
+#### Fragen
+
+- Wird durch das Bootstrapping die Anzahl der Beobachtungen erhöht?
+
+- Welche Verteilungsform zeigt das Histogramm?
+
+- Werden durch das Bootstrapping die Beobachtungen normalverteilt?
+
+***
+
+**Standardfehler**:
+
+```{r}
+se <- sd( ~ Pieces, data = Bootvtlg) |> round(4)
+se
+```
+
+#### Fragen
+
+- Welche Standardabweichung liegt bei `r se`: Die der Anzahl der Bausteine oder die der geschätzten Steigung?
+
+- Würde der Standardfehler durch mehr Bootstrap-Stichproben kleiner werden?
+
+- Wann würde der Standardfehler kleiner werden, d.h., die Präszision der Schätzung steigen?
+
+***
+
+**Konfidenzintervall**:
+
+```{r}
+ki95 <- qdata( ~ Pieces, p = c(0.025, 0.975), data = Bootvtlg)
+ki95
+```
+
+D.h., in $95\%$ der Re-Samples ergibt sich eine geschätzte Steigung zwischen `r ki95[1]` und `r ki95[2]`.
+
+#### Frage
+
+- Ist eine Steigung von $0$ kompatibel zu der Stichprobe?
+
+```{r}
+# Visualisierung Verteilung 
+gf_histogram( ~ Pieces, data = Bootvtlg,
+              # Anpassung Histogramm 
+              bins = 20, center = betadach[2]) |> 
+  # Konfidenzintervall
+  gf_vline(xintercept = ki95, color = "blue") |> 
+  # Steigung = 0
+  gf_vline(xintercept = 0, color = "red") 
+
+```
+
+### Hypothesenprüfung
+
+#### Frage
+
+- Wenn es im theoretischen Modell der Population keinen Zusammenhang zwischen $X$ und $Y$ gibt, was gilt dann für $\beta_1$ und $\hat{\beta}_1$?
+
+***
+
+```{r}
+# Zufallszahlengenerator setzen
+set.seed(1896)
+# Streudiagramm inkl. Regressionsgerade bei permutierten (shuffle()) x
+gf_point(Amazon_Price ~ shuffle(Pieces), data = lego_sub) |>
+  gf_lm()
+# Zufallszahlengenerator setzen
+set.seed(1896)
+# geschätztes Modell bei Permutationen
+do(3) * lm(Amazon_Price ~ shuffle(Pieces), data = lego_sub)
+```
+
+***
+
+```{r}
+# Zufallszahlengenerator setzen
+set.seed(1896)
+# 1000x Simulation unter Nullhypothese
+Nullvtlg <- do(1000) * lm(Amazon_Price ~ shuffle(Pieces), data = lego_sub)
+# Obere Beobachtungen
+head(Nullvtlg)
+# Visualisierung Verteilung 
+gf_histogram( ~ Pieces, data = Nullvtlg,
+              bins = 20, center = 0) |> # Anpassung Histogramm 
+  gf_vline(xintercept = betadach[2], color = "blue") |> # geschätzte Steigung in Originalstichprobe
+  gf_vline(xintercept = 0, color = "red") # Steigung = 0
+```
+
+#### Frage
+
+- Ist die geschätzte Steigung $\hat{\beta}_1 = `r betadach[2]`$ kompatibel zum Modell $H_0: \beta_1=0$?
+
+***
+
+**p-Wert**:
+
+p-Wert: Anteil der simulierten Strichproben gemäß dem Modell der Nullhypothese, in denen der (Betrag) der Steigung mindestens so groß ist wie der Betrag der Steigung in der Stichprobe
+
+```{r}
+pwert <- prop( ~ (abs(Pieces) >= abs(betadach[2])), data = Nullvtlg)
+pwert
+```
+
+#### Frage
+
+- Der p-Wert ist kleiner als $1/1000$. Heißt das, dass die Wahrscheinlichkeit, dass die Nullhypothese stimmt, kleiner als $1/1000$ ist? 
+
+***
+
+### Ergebniszusammenfassung
+
+```{r}
+summary(erg)
+```
+
+## Preismodellierung ohne erklärende Variable
+
+Betrachten wir jetzt wieder die gesamte Stichprobe (`lego`):
+
+```{r}
+# Visualisierung über Histogramm
+gf_histogram( ~ Amazon_Price, data = lego, binwidth = 10, center = 5)
+
+# Arithmetischer Mittelwert
+mean(Amazon_Price ~ 1, data = lego)
+
+# Lineare Modellierung
+erg0 <- lm(Amazon_Price ~ 1, data = lego)
+# Koeffizienten
+coef(erg0)
+```
+
+Also
+
+$$\hat{y}_i = \bar{y} = \hat{\beta}_0 = `r round(mean(Amazon_Price ~ 1, data = lego),2)`$$
+
+#### Frage
+
+- Wie groß ist hier $R^2$?
+
+## Preismodellierung mit kategorialer erklärender Variable
+
+Die Variable `Theme` ist kategorial-nominal skaliert, kann aber zur Modellierung herangezogen werden:
+
+```{r}
+# Visualisierung über verwackeltes Streudiagram
+gf_jitter(Amazon_Price ~ Theme, data = lego, width = 0.1)
+
+# Arithmetische Mittelwerte
+mean(Amazon_Price ~ Theme, data = lego)
+
+# Lineare Modellierung
+erg1 <- lm(Amazon_Price ~ Theme, data = lego)
+# Zusammenfassung
+summary(erg1)
+```
+
+#### Fragen
+
+- Bei welcher Serie ist der Mittelwert des Preises am größten?
+
+- Wie groß ist der durchschnittliche Preisunterschied zwischen `Friends` und `City`?

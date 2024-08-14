@@ -1,0 +1,291 @@
+---
+title: "Explorative Datenanalyse mit R"
+subtitle: "Repetitorium Data-Literacy"  
+lang: de
+author: "Karsten Lübke"
+date: "`r Sys.Date()`"
+format: 
+  html:
+    toc: true
+    html-math-method: katex
+  pdf:
+    toc: true
+    number-sections: false
+    colorlinks: true
+    papersize: a4
+---
+
+# Analyse kategorialer Variablen
+
+## Datenbasis
+
+> Von 1.000 Leuten in einer Kleinstadt sind 500 Mitglied im Gesangsverein. Von diesen 500 Mitgliedern im Gesangsverein sind 100 Männer. Von den 500 Einwohnern, die nicht im Gesangsverein sind, sind 300 Männer. 
+
+Diese Daten wurden in der Datentabelle `Kleinstadt.csv` simuliert.
+
+## Vorbereitungen in R
+
+Das `R`-Zusatzpaket `mosaic` installieren (einmalig):
+
+```{r install}
+#| eval: false
+install.packages("mosaic")
+```
+
+Das Paket aktivieren:
+
+```{r library}
+#| message: false
+library(mosaic)
+```
+
+## Daten einlesen
+
+Das `R` Objekt `Kleinstadt` soll sein (`<-`) das Ergebnis der Funktion *Einlesen einer csv Datei* (`read.csv2()`). Die `csv`-Datei die eingelesen werden von der `URL` `https://t1p.de/gsb4c`.
+
+```{r readcsv}
+URL <- "https://t1p.de/gsb4c"
+Kleinstadt <- read.csv2(URL)
+```
+
+## Struktur Datentabelle
+
+Struktur (`str()`) der Datentabelle `Kleinstadt`:
+
+```{r str}
+str(Kleinstadt)
+```
+
+n=`r nrow(Kleinstadt)` Beobachtungen von `r ncol(Kleinstadt)` Variablen: ``r colnames(Kleinstadt)[1]`` und ``r colnames(Kleinstadt)[2]``.
+
+## Beobachtungen
+
+Anzeige der oberen Beobachtungen (`head()`) der Datentabelle `Kleinstadt`:
+
+```{r head}
+head(Kleinstadt)
+```
+
+## Säulendiagramm
+
+*Wie viele Einwohner sind im Gesangsverein, wie viele nicht?*
+
+Zeichne ein Säulendiagramm (Funktion `gf_bar()`) der Variable `gesangsverein` aus der Datentabelle `Kleinstadt`:
+
+```{r gf_bar}
+gf_bar( ~ gesangsverein,
+        data = Kleinstadt)
+```
+
+## Absolute Häufigkeiten
+
+*Wie viele Einwohner sind im Gesangsverein, wie viele nicht?*
+
+Tabelliere (Funktion `tally()`) die Variable `gesangsverein` aus der Datentabelle `Kleinstadt`:
+
+```{r tally}
+tally( ~ gesangsverein,
+       data = Kleinstadt)
+```
+
+`r tally( ~ gesangsverein, data = Kleinstadt)[1]` sind im Gesangsverein, `r tally( ~ gesangsverein, data = Kleinstadt)[2]` sind nicht im Gesangsverein.
+
+## Relative Häufigkeiten
+
+*Wie viele Einwohner sind im Gesangsverein, wie viele nicht?*
+
+Tabelliere (Funktion `tally()`) die Variable `gesangsverein` aus der Datentabelle `Kleinstadt`, gebe dabei die Anteile (`format = "proportion"`) aus:
+
+```{r tallyprop}
+tally( ~ gesangsverein,
+       data = Kleinstadt,
+       format = "proportion")
+```
+
+Ein Anteil von `r tally( ~ gesangsverein, data = Kleinstadt, format = "proportion")[1]` ist im Gesangsverein, ein Anteil von `r tally( ~ gesangsverein, data = Kleinstadt, format = "proportion")[2]` ist nicht im Gesangsverein.
+
+## Bedingte Verteilung
+
+*Wie sieht die Verteilung Gesangsverein (ja oder nein) je Geschlecht aus?*
+
+Zeichne ein Säulendiagramm (Funktion `gf_bar()`) 
+der Variable `gesangsverein` 
+getrennt nach `geschlecht`
+aus der Datentabelle `Kleinstadt`:
+
+```{r gf_barbed}
+gf_bar( ~ gesangsverein
+        | geschlecht,
+        data = Kleinstadt)
+```
+
+Während eine Mehrheit der Frauen Mitglied im Gesangsverein ist, ist es eine Mehrheit der Männer nicht.
+
+Absolute und Relative Häufigkeiten - je Geschlecht:
+
+```{r}
+tally( ~ gesangsverein 
+       | geschlecht,
+       data = Kleinstadt)
+```
+
+```{r}
+tally( ~ gesangsverein 
+       | geschlecht,
+       format = "proportion",
+       data = Kleinstadt)
+```
+
+# Analyse metrischer Variablen
+
+## Fragestellung
+
+**Wie gesund sind Bio-Lebensmitel?**
+
+Quelle: [https://doi.org/10.1371/journal.pone.0052988](https://doi.org/10.1371/journal.pone.0052988)
+
+## Vorbereitungen in R
+
+Daten einlesen: Das `R` Objekt `Fliegen` soll sein (`<-`) das Ergebnis der Funktion *Einlesen einer csv Datei* (`read.csv2()`). Die `csv`-Datei die eingelesen werden soll kommt von der `URL2`, `https://t1p.de/lma9b`.
+
+```{r readcsv2}
+URL2 <- "https://t1p.de/lma9b"
+Fliegen <- read.csv2(URL2)
+```
+
+## Struktur Datentabelle
+
+Struktur (`str()`) der Datentabelle `Fliegen`:
+
+```{r str2}
+str(Fliegen)
+```
+
+n=`r nrow(Fliegen)` Beobachtungen von `r ncol(Fliegen)` Variablen: ``r colnames(Fliegen)[1]`` (in Tagen), ``r colnames(Fliegen)[2]`` und ``r colnames(Fliegen)[3]``.
+
+## Beobachtungen
+
+Anzeige der oberen Beobachtungen (`head()`) der Datentabelle `Fliegen`:
+
+```{r head2}
+head(Fliegen)
+```
+
+## Histogramm
+
+*Wie verteilt sich die Lebenserwartung der Fliegen?*
+
+Zeichne ein Histogramm (`gf_histogram()`) 
+der Variable `lebensdauer` 
+aus der Datentabelle `Fliegen`.
+Die Balken sollen 4 Tage breit sein (`binwidth`) und
+die Mitte eines Balkens soll bei 2 Tagen liegen (`center`):
+
+```{r gf_hist}
+gf_histogram( ~ lebensdauer,
+        data = Fliegen,
+        binwidth = 4,
+        center = 2) 
+```
+
+Auf der $x$-Achse: Lebensdauer in Tagen.
+
+Auf der $y$-Achse: Häufigkeit (`count`), wie oft das Intervall der $x$-Achse in der Datentabelle vorkommt.
+
+## Verteilungsfunktion
+
+*Wie oft sterben die Fliegen innerhalb der ersten 10 Tage?*
+
+**Empirische Verteilungsfunktion**: $F_n(q)$=Anteil der Beobachtungen $\leq q$.
+
+Bestimme den Wert der Empirischen Verteilungsfunktion (`pdata()`) der Variable
+`lebensdauer` an der Stelle `q=10` in der Datentabelle `Fliegen`:
+
+```{r pdata}
+pdata( ~ lebensdauer,
+       q = 10,
+       data = Fliegen)
+```
+
+`r pdata( ~ lebensdauer, q = 10, data = Fliegen)*100`% der Fliegen sterben innerhalb der ersten 10 Tage (einschließlich).
+
+## Quantilsfunktion
+
+*Welche Lebenserwartung erreichen 90% der Fliegen maximal?*
+
+**Quantile** geben an, welcher Wert $q$ mit einer gegebenen Wahrscheinlichkeit $p$ nicht überschritten wird.
+
+Bestimme den Wert der Quantilsfunktion (`qdata()`) der Variable
+`lebensdauer` am 90%-Quantil (`p = 0.9`) in der Datentabelle `Fliegen`:
+
+```{r qdata}
+qdata( ~ lebensdauer,
+       p = 0.9,
+       data = Fliegen)
+```
+
+Bis zum `r qdata( ~ lebensdauer, p = 0.9, data = Fliegen)`. Tag (einschließlich) sind 90% der Fliegen verstorben.
+
+## Median
+
+Der **Median** ist das 50%-Quantil $x_{0.5}$ und liegt bei den nach Größe aufsteigend sortierten Beobachtungen in der Mitte, d.h., mindestens $50\%$ der Beobachtungen sind nicht größer, mindestens $50\%$ sind nicht kleiner. Bei stetigen Variablen gilt: $F_n(x_{0.5}) = 0.5$.
+
+Der Median ist robust gegenüber Ausreißern.
+
+Berechne den Median (`median()`) der `lebensdauer` in der Datentabelle `Fliegen`:
+```{r median}
+median( ~ lebensdauer, data = Fliegen)
+```
+
+$x_{0.5}=`r median( ~ lebensdauer, data = Fliegen)`$, d. h., mindestens 50% erreichen eine Lebensdauer von höchstens $`r median( ~ lebensdauer, data = Fliegen)`$ Tagen, mindestens 50% eine von mindestens $`r median( ~ lebensdauer, data = Fliegen)`$ Tagen.
+
+## Boxplot
+
+Ein **Boxplot** (`gf_boxplot()`) visualisiert wichtige Quantile einer Verteilung. In der *Box* liegen die mittleren 50% der Beobachtungen (25% Quantil, `q1`, bis 75% Quantil, `q3`). Die Linie in der Mitte der Box ist der Median. Minimum und Maximum sind erkennbar sowie außergewöhnliche Werte außerhalb der Antennen (`fence`, whisker).
+
+```{r boxplot}
+gf_boxplot(lebensdauer ~ 1, data = Fliegen, xlab = element_blank())  %>%
+  gf_theme(axis.ticks.x = element_blank(), 
+           axis.text.x = element_blank()) 
+```
+
+## Mittelwert
+
+Der **Arithmetische Mittelwert** $\bar{x}$ ergibt sich als die Summe aller Beobachtungswerte geteilt durch die Anzahl.
+$$\bar{x}=\frac{1}{n}\sum_{i=1}^n x_i$$
+
+Der Mittelwert ist nicht robust gegenüber Ausreißern.
+
+Berechne den Mittelwert (`mean()`) der `lebensdauer` in der Datentabelle `Fliegen`:
+```{r mean}
+mean( ~ lebensdauer, data = Fliegen)
+```
+
+Die *durchschnittliche* Lebensdauer der Fliegen liegt bei $\bar{x}=`r round(mean( ~ lebensdauer, data = Fliegen),2)`$ Tagen. 
+
+## Standardabweichung
+
+Die **Standardabweichung** $sd$ ist eine Kennzahl für die Streuung der Beobachtungen.
+$$sd=\sqrt{\frac{1}{n-1}\sum_{i=1}^n (x_i-\bar{x})^2}$$
+
+Die Standardabweichung ist nicht robust gegenüber Ausreißern.
+
+Berechne die Standardabweichung (`sd()`) der `lebensdauer` in der Datentabelle `Fliegen`:
+```{r sd}
+sd( ~ lebensdauer, data = Fliegen)
+```
+
+Die Streuung der Beobachtungen liegt bei einer Standardabweichung von $sd=`r round(sd( ~ lebensdauer, data = Fliegen),2)`$ Tagen. 
+
+## Bedingte Verteilung
+
+*Wie sieht die Verteilung Lebensdauer je Ernährung (Bio `Ja` / `Nein`) aus?*
+
+Kennzahlen:
+
+Berechne die zentralen Kennzahlen (Funktion `favstats()`) der Variable `lebensdauer` in Abhängigkeit (`~`) der Variable `bio` aus der Datentabelle `Fliegen`:
+
+```{r favstats}
+favstats(lebensdauer ~ bio, data = Fliegen)
+```
+

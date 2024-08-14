@@ -1,0 +1,316 @@
+---
+title: "Inferenzstatistik"
+subtitle: "Repetitorium Data-Literacy"  
+lang: de
+author: "Karsten Lübke"
+date: "`r Sys.Date()`"
+format: 
+  html:
+    toc: true
+    html-math-method: katex
+  pdf:
+    toc: true
+    number-sections: false
+    colorlinks: true
+    papersize: a4
+---
+# Punktschätzung
+
+Eine Methode, den Parameter einer Population zu schätzen, ist, die entsprechende Statistik der Stichprobe als Schätzwert zu verwenden. Das *Dach* $\hat{\cdot}$ symbolisiert dabei die Schätzung. Z. B.:
+
+- (kategorialer) Anteilswert: $\hat{\color{blue}{\pi}}=\color{green}{p}$
+
+- (metrischer) Mittelwert: $\hat{\color{blue}{\mu}}=\color{green}{\bar{x}}$
+
+- (metrische) Standardabweichung: $\hat{\color{blue}{\sigma}}=\color{green}{sd}$
+
+- ...
+
+Vorbereitung:
+
+```{r}
+#| message: false
+library(mosaic)
+```
+
+Eine Datentabelle aus einem Vorsemester ist unter <https://t1p.de/o12et> verfügbar:
+
+```{r}
+URL <- "https://t1p.de/7ttu0"
+DGP <- read.csv2("https://t1p.de/o12et")
+```
+
+Datenkontrolle:
+
+```{r}
+str(DGP)
+```
+
+
+Tabelliere (Funktion `tally()`) die Variable `wahl` aus der Datentabelle `DGP`:
+
+```{r}
+tally( ~ wahl,
+       data = DGP)
+```
+
+Tabelliere (Funktion `tally()`) die Variable `wahl` aus der Datentabelle `DGP`, gebe dabei die Anteile (`format = "proportion"`) aus:
+
+```{r}
+tally( ~ wahl,
+       data = DGP,
+       format = "proportion")
+```
+
+## Re-Sampling
+
+Das Ergebnis unserer zufälligen Stichprobe:
+
+```{r}
+p_stipro <- prop( ~ wahl, success = "A",
+                             data = DGP)
+p_stipro
+```
+
+
+**Idee**: Simuliere zufälliges Ziehen aus der Population durch zufälliges Ziehen &ndash; mit Zurücklegen &ndash; aus der Stichprobe.
+
+Anteile im zufälligen Re-Sample:
+
+```{r}
+do(3) * prop( ~ wahl, success = "A",
+                             data = resample(DGP))
+```
+
+## Bootstrap
+
+**Idee**: Wiederhole zufälliges Re-Sampling um Stichprobenverteilung zu schätzen.
+
+```
+Setze den Zufallszahlengenerator
+Bootvtlg soll sein: Wiederhole 10000x
+  Berechne den Anteil von wahl = "A"
+    in einem Re-Sample der Stichprobe DGP
+```
+
+```{r Bootvtg}
+set.seed(1896)
+Bootvtlg <- do(10000) * 
+  prop( ~ wahl, success = "A",
+        data = resample(DGP))
+```
+
+## Bootstrap-Verteilung
+
+Die Verteilung des Anteils $\color{green}{p}$ bei zufälligen Stichproben wird durch die Verteilung des Anteils `prop_A` in den Re-Samples der Datentabelle `Bootvtlg` geschätzt:
+
+```{r histboot}
+gf_bar( ~ prop_A, 
+        data = Bootvtlg)
+```
+
+## Standardfehler
+
+- Der Punktschätzer $\color{green}{\hat{\pi}}$ variiert mit der Stichprobe.
+
+- Der **Standardfehler** $se$ ist die Standardabweichung des Schätzwertes.
+
+- Der Standardfehler kann geschätzt werden durch die Standardabweichung (`sd()`) des Anteils $\color{green}{p}$ (`prop_A`) in den 10000 Re-Samples der `Bootvtlg`:
+
+```{r}
+se <- sd( ~ prop_A, data = Bootvtlg)
+se
+```
+
+**Formeln Standardfehler**:
+
+Für unabhängig, identisch verteilte Beobachtungen:
+
+- Z. B. für Mittelwert: $se=\frac{\sigma}{\sqrt{n}}$
+
+- Z. B. für Anteilswert: $se=\sqrt{\frac{\pi\cdot(1-\pi)}{n}}$
+
+# Bereichsschätzung
+
+## Konfidenzintervall
+
+- In $95\,\%$ der Re-Samples liegt der Schätzwert zwischen dem $2.5\%$- und dem $97.5\%$-Quantil:
+
+```{r}
+qdata( ~ prop_A, p = c(0.025, 0.975), data = Bootvtlg)
+```
+
+
+- Das geschätzte $95\%$-Konfidenzintervall für $\color{blue}{\pi}$ auf Basis der Stichprobe überdeckt den Bereich $`r sprintf("%.2f",floor(qdata( ~ prop_A, p = c(0.025), data = Bootvtlg)*1000)/1000)`$ bis $`r sprintf("%.2f",ceiling(qdata( ~ prop_A, p = c(0.975), data = Bootvtlg)*1000)/1000)`$. 
+
+- Anteile in diesem Bereich sind mit den vorhandenen Daten *kompatibel*.
+
+Die *Konfidenz* bezieht sich auf das Verfahren, nicht das eine Ergebnis!
+
+Wenn wir wiederholt Stichproben vom Umfang $n=56$ aus einer Population mit $\color{blue}{\pi}=0.6$ ziehen, wird in $\approx 95\,\%$ der Stichproben das resultierende $95\%$-Konfidenzintervall $\color{blue}{\pi}$ überdecken.
+
+## Konfidenzintervall und Standardfehler
+
+- Ein Schätzwert (z. B. Anteil $p$, aber analog für Mittelwert usw.) ist bei großem $n$ häufig *normalverteilt*.
+
+- Daher *Approximation* zur Schätzung des $95\,\%$-Konfidenzintervalls mit Hilfe des Punktschätzers und Standardfehlers:
+
+$$\hat{\pi} \pm 2 \cdot \hat{se}$$
+
+```{r}
+ki_approx <- c(p_stipro-2*se, p_stipro+2*se)
+ki_approx
+```
+
+# Hypothesenprüfung
+
+## Nullhypothese
+
+Die kritisch zu überprüfende Annahme wird **Nullhypothese**, $H_0$, genannt.
+
+Simulieren wir eine Welt, in der $H_0: \color{blue}{\pi}=0.5$ gilt. Dazu können wir z. B. eine (faire) Münze werfen. Wie in der Stichprobe $n=56$-mal:
+
+```{r}
+rflip(n = 56, prob = 0.5)
+```
+
+Simulieren wir $10000$ Stichproben vom Umfang $n=56$, in denen der zu überprüfende Wert $\color{blue}{\pi_0}=0.5$ gilt:
+
+```
+Setze Zufallszahlengenerator
+Nullvtlg soll sein: Wiederhole 10000x
+  Werfe 56x eine Münze mit einer Erfolgswahrscheinlichkeit von 0.5
+```
+
+```{r}
+set.seed(1896)
+Nullvtlg <- do(10000)*
+  rflip(n = 56, prob = 0.5)
+```
+
+## Verteilung unter der Nullhypothese
+
+Die Verteilung des Anteils $\color{green} {p}$ in Stichproben vom Umfang $n=56$ bei $\color{blue}{\pi_0}=0.5$ wird mit Hilfe des Anteils `prop` aus der Datentabelle `Nullvtlg` geschätzt:
+
+```{r histnull}
+gf_bar( ~ prop, 
+        data = Nullvtlg)
+```
+
+Vergleichen wir die Anteile in den simulierten Stichproben, wenn $\color{blue}{\pi_0}=0.5$ gelten würde, mit dem beobachteten Wert der Stichprobe, $\color{green}{p}=`r p_stipro`$:
+
+```{r histnullest}
+gf_bar( ~ prop, 
+        data = Nullvtlg) %>%
+  gf_vline(xintercept =~ 0.75)
+```
+
+## Hypothesenprüfung
+
+Die Hypothesen beziehen sich auf das Modell der Datengenerierung, auf den Wert des Parameter.
+
+**Nullhypothese**: Der Anteil A in der zugrunde liegenden Population liegt bei höchstens $0.5$:
+
+  $$H_0: \color{blue}{\pi} \leq 0.5$$
+
+Bei einer Hypothesenprüfung wird *nur* analysiert inwieweit der Schätzwert *kompatibel* zum Modell der Nullhypothese ist.
+
+## p-Wert 
+
+Der **p-Wert** gibt Auskunft über die Frage: Wenn die Nullhypothese $H_0$ stimmen würde, wie wahrscheinlich ist dann eine mindestens so große Abweichung des beobachteten Wertes $\color{green} {p}$ der Stichprobe vom Umfang $n$ zum theoretisch erwarteten Wert des angenommenen Modells $\color{blue}{\pi_0}$?
+
+Wie hoch ist der Anteil (`prop()`) der Simulationen mit $\color{blue}{\pi_0}=0.5$ (`Nullvtlg`), mit `prop` größer oder gleich $\color{green} {p}=0.75$?
+
+```{r}
+p_wert <- prop( ~ (prop >= 0.64), data = Nullvtlg)
+p_wert
+```
+
+- Der p-Wert, d. h., der Anteil der (simulierten) Stichproben, in denen $p\geq \color{green}{0.75}$ ist, obwohl $\color{blue}{\pi_0}=0.5$ gilt, liegt bei `r p_wert`.
+
+- Wenn das Modell der Nullhypothese gelten würde, ist ein mindestens so extremes Ergebnis wie das der beobachteten Stichprobe unwahrscheinlich. Daher haben wir berechtigen Zweifel daran, dass die Nullhypothese stimmt.
+
+## Alternativhypothese und Signifikanz
+
+- Das Gegenteil der Nullhypothese ist die **Alternativhypothese**, $H_A$.
+
+- Ein vorab festgelegtes **Signifikanzniveau** $\alpha$ (üblich: $\alpha=0.05$) kann zu einer (Test-)Entscheidungsregel genutzt werden. Ist der p-Wert kleiner als $\alpha$, so wird $H_0$ zugunsten von $H_A$ verworfen, ansonsten nicht.
+
+- Wird $H_0$ verworfen, wird das Ergebnis statistisch **signifikant** (*erkennbar*) zum Niveau $\alpha$ genannt.
+
+Im Beispiel: Da $\text{p-Wert}=`r p_wert` < \alpha  = 0.05$, wird $H_0: \pi \leq 0.5$ verworfen.
+
+## Fehlerarten
+
+- **Fehler 1. Art**, $\alpha$-Fehler: $H_0$ wird verworfen, obwohl $H_0$ gilt. Die Wahrscheinlichkeit, einen solchen Fehler zu begehen, ist kleiner gleich $\alpha$. 
+
+- **Fehler 2. Art**, $\beta$-Fehler: $H_0$ wird nicht verworfen, obwohl $H_0$ nicht gilt. Die Wahrscheinlichkeit, diesen Fehler zu begehen, sinkt mit steigendem Stichprobenumfang $n$.
+
+
+*Hinweis*: Die Fehlerwahrscheinlichkeiten beziehen sich auf das Verfahren, d. h. wie oft dieses bei wiederholter Stichprobenziehung zu einer falschen Entscheidung führt. Was für die einzelne Stichprobe gilt ist i. d. R. unbekannt.
+
+## Grenzen des p-Wertes
+
+Der p-Wert sagt u. a. **nicht**,
+
+- wie (un)wahrscheinlich die Null- oder Alternativhypothese ist. 
+
+- ob die Abweichung vom beobachteten zum zu überprüfenden Wert, z. B. $\color{green}{p}-\color{blue}{\pi_0}$, groß oder relevant ist.
+
+Der p-Wert variiert mit der Stichprobe &ndash; auch wenn $H_0$ gilt, zeigen z. B. $5\,\%$ der Stichproben ein statistisch signifikantes Ergebnis an.
+
+*Hinweis*: Werden mehrere Hypothesen getestet, kumuliert die Fehlerwahrscheinlichkeit. Hier müssen dann ggf. die individuellen Signifikanzniveaus angepasst werden.
+
+## Inferenz
+
+**Ziel**: Aussagen treffen, die über die vorliegenden Daten hinausgehen &ndash; dabei müssen wir Unsicherheit akzeptieren!
+
+
+Die Datenerhebung und die unmittelbar möglichen Schlüsse stehen im Zusammenhang mit den wissenschaftlichen Gütekriterien:
+
+- **randomisierte Stichprobe**: Ergebnis generalisierbar auf die zugrunde liegende (Ziel-)Population.
+
+- **randomisiertes Experiment**: Ergebnis ermöglicht Kausalschluss.
+
+## Ablauf: Hypothesenprüfung
+
+1\. Inhaltliche Hypothese operationalisieren. 
+
+2\. Nullhypothese $H_0$ (und Alternativhypothese $H_A$, Forschungsvermutung) festlegen. Dazu passende Teststatistik bestimmen: 
+
+ - Sprechen hohe Werte der Teststatistik gegen die Nullhypothese?  
+ Einseitiger Test $H_0: \delta \leq \delta_0,\,H_A:\delta>\delta_0$.
+ - Sprechen niedrige Werte der Teststatistik gegen die Nullhypothese?  
+ Einseitiger Test $H_0: \delta \geq \delta_0,\,H_A:\delta<\delta_0$.
+ - Sprechen sowohl hohe als auch niedrige Werte gegen die Nullhypothese?  
+ Zweiseitiger Test $H_0: \delta = \delta_0,\,H_A:\delta \neq\delta_0$.
+
+3\. Verteilung der Teststatistik unter $H_0$ bestimmen.
+
+4\.  Prüfung über p-Wert: Ist der beobachtete Wert der Teststatistik der Stichprobe unter $H_0$ unwahrscheinlich, z. B. $< \alpha$?
+
+ - Nein: $H_0$ kann nicht verworfen werden. Abweichung statistisch nicht signifikant.
+ - Ja: $H_0$ wird verworfen. Abweichung statistisch signifikant.
+
+
+## Modellierung Inferenz
+
+-  Grundlage: Unabhängig, identisch verteilte Daten, z. B. aufgrund einer zufälligen Stichprobe oder einer zufälligen Zuordnung.
+
+- `Y ~ 1` (d. h. ohne unabhängige Variable): Modellierte Verteilung von $Y$ hängt von einem interessierenden Parameter ab. Nullhypothese z. B. $\pi=\pi_0$ oder $\mu=\mu_0$.
+
+- `Y ~ X`: Die Modellierung der Verteilung von $Y$ hängt evtl. von $X$ ab. Nullhypothese i. d. R.: Die Verteilung von $Y$ ist für alle $X$ gleich. *Siehe Regression!*
+
+*Hinweis*: Die Verteilung unter der Nullhypothese kann mit Hilfe von Simulation oder mit Methoden der mathematischen Statistik bestimmt werden.
+
+## Einfache Teststatistiken
+
+- `Y ~ 1`: $Y$ kategorial-binär 
+  - $Y$ kategorial-binär: $p$, `prop()`
+  - $Y$ metrisch: $\bar{y}$, `mean()`
+
+- `Y ~ X`: mit $X$ kategorial-binär 
+  - $Y$ kategorial-binär: $p_B-p_A$, `diffprop()`
+  - $Y$ metrisch: $\bar{y}_B-\bar{y}_B$, `diffmean()`
+
+*Hinweis*: Für viele weitere Fragestellungen gibt es entsprechende Teststatistiken.

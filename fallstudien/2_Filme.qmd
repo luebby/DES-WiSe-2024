@@ -1,0 +1,219 @@
+---
+title: "Was guckst Du?"
+lang: de
+author: "Ihr Name"
+date: today
+format: 
+  html:
+    toc: true
+    html-math-method: katex
+  pdf:
+    toc: true
+    number-sections: false
+    colorlinks: true 
+    papersize: a4
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(mosaic)
+library(here)
+```
+
+# Filminteressen
+
+Welche Filmgenres interessieren Studierende? 
+
+Dazu liegt eine Datentabelle einer freiwilligen und anonymen Online-Umfrage unter FOM Studierenden in ausgewählten Fächern und Standorten vor.^[Hinweis: Aus Datenschutzgründen wurden die Daten verrauscht.]
+
+<!-- Technischer Hinweis: das Paket here (https://here.r-lib.org/) ermöglicht einen einfacheren Umgang mit Datei(pfaden) innerhalb von RStudio Projekten. Die csv Datei "film.csv" befindet sich im Projektordner "data". -->
+
+```{r}
+# Datei (inkl. Pfad)
+pfad_film <- here("data", "film.csv")
+# Daten einlesen
+film <- read.csv2(pfad_film)
+# Datenstruktur der Datentabelle film
+str(film)
+# Obere Beobachtungen der Datentabelle
+head(film)
+```
+
+#### Fragen
+
+- Handelt es sich um eine zufällige Stichprobe der Bevölkerung der Bundesrepublik Deutschland?
+
+- Handelt es sich um eine zufällige Stichprobe von FOM Studierenden?
+
+- Liegt ein randomisiertes Experiment vor?
+
+- Wie viele Beobachtungen hat die Datentabelle?
+
+- Wie viele Variablen hat die Datentabelle?
+
+- Welches Skalenniveau hat die Variable `G01_Geschlecht`?
+
+- Welches Skalenniveau hat die Variable `G02_Alter`?
+
+## Horrorfilme
+
+Explorative Datenanalyse:
+
+```{r}
+# Säulendiagramm
+gf_bar( ~ E_Horror, data = film)
+# Absolute Häufigkeiten
+tally( ~ E_Horror, data = film)
+# Relative Häufigkeiten
+tally( ~ E_Horror, data = film, format = "proportion")
+```
+
+
+#### Fragen
+
+- Interessiert sich eine Mehrheit der Stichprobe für Horrorfilme?
+
+- Wie viel Prozent der Teilnehmer:innen interessieren sich für Horrorfilme?
+
+### Horrorfilme und Komödien
+
+Explorative Datenanalyse:
+
+```{r}
+# Säulendiagramm
+gf_bar( ~ E_Horror, fill = ~ E_Komoedie, data = film, 
+        title = "Abbildung A")
+gf_bar( ~ E_Horror, fill = ~ E_Komoedie, data = film, position = position_dodge(),
+        title = "Abbildung B")
+gf_bar( ~ E_Horror, fill = ~ E_Komoedie, data = film, position = "fill",
+        title = "Abbildung C")
+```
+
+***
+
+#### Frage
+
+- Welche Gruppe interessiert sich mehr für Komödien? Die mit Interesse an Horrorfilmen oder die ohne?
+
+***
+
+```{r}
+# Absolute Häufigkeiten
+tally(E_Komoedie ~ E_Horror, data = film)
+# Relative Häufigkeiten
+tally(E_Komoedie ~ E_Horror, data = film, format = "proportion")
+# Anteile
+prop(E_Komoedie ~ E_Horror, data = film, success = "Ja")
+```
+
+#### Fragen
+
+- Wie viel Prozent derjenigen, die sich für Horrorfilme interessieren, interessieren sich auch für Komödien?
+
+- Angenommen uns interessiert, wie viel Prozent derjenigen, die sich für Komödien interessieren, sich auch für Horrorfilme interessieren. Wird das Ergebnis genau so hoch sein wie bei der Frage zuvor?
+
+#### R Übung
+
+- Wie viel Prozent derjenigen, die sich für Komödien interessieren, interessieren sich auch für Horrorfilme?
+
+```{r}
+
+```
+
+## Drama
+
+```{r}
+# Absolute Häufigkeiten
+tally(E_Drama ~ E_Action, data = film)
+# Relative Häufigkeiten
+tally(E_Drama ~ E_Action, data = film, format = "proportion")
+# Anteile
+prop(E_Drama ~ E_Action, data = film, success = "Ja")
+```
+
+#### Frage
+
+- Wie lautet die *Frage*, auf die das Ergebnis `r prop(E_Drama ~ E_Action, data = film, success = "Ja")[2]` lautet?
+
+## Your-Turn
+
+#### Frage
+
+- Wie viel Prozent der männlichen Teilnehmenden interessieren sich für Liebesfilme?
+
+```{r}
+
+```
+
+## Altersverteilung
+
+Ein Histogramm visualisiert die Verteilung des Alters in der Stichprobe:
+
+```{r}
+gf_histogram( ~ G02_Alter, data = film,
+              binwidth = 5,  # Breite der Intervalle
+              center = 17.5) # Mitte eines der Intervalle
+```
+
+#### Frage
+
+- Was können Sie dem Histogramm entnehmen?
+
+
+### Verteilungs- und Quantilsfunktion
+
+Mit Hilfe von `pdata()` kann für beliebige Alter `q` der Wert der empirischen Verteilungsfunktion $F_n$ ermittelt werden, d.h. hier, der Anteil der Studierenden, in denen das Alter z.B. kleiner oder gleich `q = 20` Jahre war:
+
+```{r}
+pdata( ~ G02_Alter, q = 20, data = film)
+```
+
+#### Fragen
+
+Ändern Sie den Code jeweils so, dass Sie die Fragen beantworten können.
+
+- Wie hoch ist der Anteil der Studierenden mit einem Alter kleiner gleich 25 Jahre?
+
+```{r}
+pdata( ~ G02_Alter, q = 20, data = film)
+```
+
+- Wie hoch ist der Anteil der Studierenden, die älter als 30 Jahre sind?
+
+```{r}
+pdata( ~ G02_Alter, q = 20, data = film)
+```
+
+***
+
+`qdata()` gibt an, welcher Wert für eine gegebene relative Häufigkeit `p` nicht überschritten wird, d.h. die jeweiligen Quantile. Z.B. gilt für mindestens 5% der Stichprobe, dass das Alter nicht größer als als `r qdata(  ~ G02_Alter, p = 0.05, data = film)` war:
+
+```{r}
+qdata(  ~ G02_Alter, p = 0.05, data = film)
+```
+
+### Deskriptive Kennzahlen
+
+`favstats()` liefert einen Überblick über die gängigen Kennzahlen einer metrischen Variable:
+
+```{r}
+favstats( ~ G02_Alter, data = film)
+```
+
+
+### Altersverteilung nach Filmgenre
+
+Ein Boxplot ermöglich den Vergleich der Altersverteilung, je nachdem ob z.B. Dokumentationen geguckt werden oder nicht.
+
+```{r}
+# Boxplot
+gf_boxplot(G02_Alter ~ E_Dokumentation, data = film)
+# Kennzahlen
+favstats(G02_Alter ~ E_Dokumentation, data = film)
+```
+
+#### Frage
+
+- Was können Sie über einen Vergleich der Altersverteilung in Abhängigkeit des Guckens von Dokumentationen aussagen?
+

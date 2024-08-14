@@ -1,0 +1,174 @@
+---
+title: "Händlerempfehlungen"
+lang: de
+author: "Ihr Name"
+date: today
+format: 
+  html:
+    toc: true
+    html-math-method: katex
+  pdf:
+    toc: true
+    number-sections: false
+    colorlinks: true 
+    papersize: a4
+---
+
+```{r}
+#| label: setup
+#| include: false
+# Paket mosaic aktivieren
+library(mosaic)
+# Zufallszahlengenerator festlegen
+set.seed(1896)
+```
+
+# Händlerrating
+
+Für den Kauf eines bestimmten Produktes im Internet finden Sie zwei Händler, die das Produkt zum selben Preis und zu den selben Konditionen anbieten.
+
+- Händler A hat 100 Bewertungen, wovon 95 positiv sind.
+
+- Händler B hat 5 Bewertungen, wovon 5 positiv sind.
+
+#### Fragen
+
+- Für welchen Händler würden Sie sich entscheiden?
+
+- Warum?
+
+
+## Händlerdaten
+
+Zunächst erzeugen wir uns in `R` eine *Variable* `n_A`. Diese Variable soll die Anzahl an Bewertungen von Händler A enthalten. `y_A` die Anzahl der positiven Bewertungen. 
+Die *Zuweisung* von Werten zu Variablen erfolgt über `<-`. Ein Kommentar wird über `#` eingeleitet.
+
+```{r}
+# Anzahl Bewertungen A:
+n_A <- 100
+# Anzahl postive Bewertungen A:
+y_A <- 95
+```
+
+#### Frage
+
+- Kann `y_A` größer als `n_A` sein?
+
+***
+
+`R` kann auch als Taschenrechner benutzt werden:
+
+```{r}
+# Anteil positive Bewertungen berechnen und ausgeben:
+y_A/n_A
+# Anteil positive Bewertungen A zuweisen:
+p_A <- y_A/n_A
+```
+
+Es gibt jetzt in `R` die Variable `p_A`, der der Wert `y_A/n_A` zugewiesen (`<-`) wurde. Eine Ausgabe erfolgt über ein einfaches `p_A`.
+
+```{r}
+p_A
+```
+
+
+#### Frage
+
+- Nutzen Sie den folgenden *Code-Chunk* um den Anteil der positiven Bewertungen von Händler B in `R` zuzuweisen und auszugeben.
+
+```{r}
+
+```
+
+## Ihre Erfahrung
+
+Die bisherigen Erfahrungsberichte sind Daten der Vergangenheit, die Anteile der postiven Bewertungen `p_A` und `p_B` basieren darauf.
+
+#### Fragen
+
+- Angenommen Sie bestellen bei beiden Händlern und machen bei beiden eine negative Erfahrung und berichten diese. Ändern sich dann die Anteile  `p_A` und `p_B`?
+
+- Nutzen Sie den folgenden Code-Chunk um die Änderungen der Anteilswerte zu berechnen:
+
+```{r}
+# Neuer Anteil Positiv bei Händler A:
+(y_A + 0)/(n_A + 1)
+# Neuer Anteil Positiv bei Händler B:
+
+```
+
+## Simulation
+
+Stellen wir uns den Kauf des Produktes als einen *Versuch* vor. Dabei hat jeder Händler eine uns unbekannte Erfolgswahrscheinlichkeit $\pi_A$ bzw $\pi_B$. 
+Je höher $\pi$ ist, desto wahrscheinlicher ist es, dass wir bei unserem Kauf eine positive *Beobachtung* machen. 
+
+#### Frage
+
+- Was tippen Sie: Wie groß ist $\pi_A$?
+
+- **Angenommen** $\pi_B=0.9$. Ist dann ein Ergebnis mit $n_B=5$ und $y_B=5$ möglich?
+
+----
+
+`R` Funktionen enthalten Anweisungen, die dem Computer sagen, was er mit einer möglichen Eingabe machen soll. 
+Ähnlich wie in der Mathematik: $f(x)=x^2$. Das Funktionsargument $x$ soll quadriert werden. 
+`R` Funktionen haben einen Namen, und das Funktionsargument (zusammen mit möglichen weiteren Argumenten und Optionen) steht in Klammern. 
+Welche Eingaben und Ausgaben eine Funktion hat kann sehr unterschiedlich sein. 
+
+
+Die Funktion `rflip()` simuliert einen zufälligen Münzwurf.
+Dabei können wir angeben wie oft wir eine Münze werfen wollen (Argument `n`) und (optional) welche Erfolgswahrcheinlichkeit (`prob`) ein Wurf hat:
+
+```{r}
+# Simulere 5 Würfe mit einer Erfolgswahrscheinlichkeit von 90%
+rflip(n = 5, prob = 0.9)
+```
+
+#### Fragen
+
+- Was zählt hier als *Erfolg*? Kopf (*H*eads) oder Zahl (*T*ails)?
+
+- Unterscheidet sich der beobachtete Anteil der Erfolge von der festgelegten Erfolgswahrscheinlichkeit? 
+
+### Viele Simulationen
+
+Eine Simulation ist vielleicht zu wenig um zu gucken, wie die *Verteilung* der Anzahl Erfolge $y_B$ bei $n_B=5$ Versuchen und einer Erfolgswahrscheinlichkeit von $\pi_B=0.9$ ist. 
+Über den Befehl `do()*` können wir den folgenden Befehl wiederholen.
+So erhalten wir einen Einblick über die Wahrscheinlichkeiten von $0, 1, 2, \ldots, n_B$ Empfehlungen, wenn wir $n_B=5$ Versuchen und einer Erfolgswahrscheinlichkeit von $\pi_B=0.9$ durchführen würden:
+
+```{r}
+# Simulation_B soll sein: Wiederhole 1000x
+#   Werfe 5x die Münze mit einer Erfolgswahrscheinlichkeit von 0.9
+Simulation_B <- do(1000)* 
+  rflip(n = 5, prob = 0.9)
+```
+
+`Simulation_B` ist jetzt eine Datentabelle, die 1000 Zeilen und 4 Spalten hat:
+
+```{r}
+# Dimension (Zeilen, Spalten)
+dim(Simulation_B)
+# Obere 6 Beobachtungen der Datentabelle
+head(Simulation_B)
+# Untere 6 Beonachtungen der Datentabelle
+tail(Simulation_B)
+```
+
+In jeder Zeile steht das Ergebnis einer Simulation. In der zweiten Spalte (Variable `heads`) steht jeweils, wie oft bei den `n` Versuchen ein Erfolg eintrat. 
+
+Über ein Säulendiagramm (Funktion `gf_bar()`) können wir uns anschauen wie viele Erfolge (`heads`) wir in unseren 1000 Simulationen (Datentabelle `Simulation_B`) jeweils hatten.
+
+```{r}
+# Zeichne ein Säulendiagramm der Variabe heads aus der Datentabelle Simulation_B
+gf_bar( ~ heads, data = Simulation_B)
+```
+
+### Frage
+
+- Welche Anzahl Erfolge kommt bei 5 Versuchen mit einer Erfolgswahrscheinlichkeit von jeweils $\pi_B=0.9$ am Häufigsten vor?
+
+
+#### Hinweis
+
+Diese Fallstudie ist inspiriert vom Video *3Blue1Brown, Binomialverteilungen | Wahrscheinlichkeiten von Wahrscheinlichkeiten, Teil 1*, verfügbar unter <https://youtu.be/8idr1WZ1A7Q>.
+

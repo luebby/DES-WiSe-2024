@@ -1,0 +1,126 @@
+---
+title: "Covid-19 Impfung"
+lang: de
+author: "Ihr Name"
+date: today
+format: 
+  html:
+    toc: true
+    html-math-method: katex
+  pdf:
+    toc: true
+    number-sections: false
+    colorlinks: true
+    papersize: a4
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(mosaic)
+# Zufallszahlengenerator festlegen
+set.seed(1896)
+```
+
+# Wirkt die Covid Schutzimpfung?
+
+#### Frage
+
+- Unter 170 Covid-19 Fällen sind 8 geimpfte Personen und 162 nicht geimpfte Personen. Können Sie allein aus dieser Information schließen, dass die Impfung vor der Erkrankung schützt?
+
+## Studie
+
+Das Design der Studie für den Covid-19 Impfstoff von Biontech/Pfizer sah wie folgt aus:
+
+- Randomisiertes Experiment mit $\approx 43660$ Teilnehmenden.
+
+- Multinationale Studie, Teilnehmende über 16 Jahre.
+
+- Zufällige (!) Zuordnung zu Impf- oder Placebogruppe, jeweils $\approx 21830$ Personen.
+
+- Für Details der Originalstudie siehe z.B. <https://www.nejm.org/doi/full/10.1056/NEJMoa2034577>
+
+*Hinweis*: Aufgrund von Ausschlusskriterien weichen die echten Daten leicht ab.
+
+
+Sei $\pi$ der Anteil der Fälle, die aus der Impfgruppe stammen.
+
+
+#### Fragen
+
+- Wie groß ist $\pi$, wenn die Imfung nicht wirken würde?^[Bei, wie hier, gleich großer Impf- und Placebogruppe.]
+
+- Wie groß ist bei dieser Studie der Punktschätzer $\hat{\pi}$ für die unbekannte Wahrscheinlichkeit $\pi$, dass ein Erkrankter aus der Impfgruppe stammt?
+
+```{r}
+
+```
+
+
+## Zufallssimulation
+
+Eine einfache Möglichkeit, eine Erfolgswahrscheinlichkeit von $\pi=0.5$ zu simulieren ist der Münzwurf. Werfen Sie bitte $8\times$ eine Münze und tragen Sie unter [https://forms.gle/dXdhzL5YqttY46wu5](https://forms.gle/dXdhzL5YqttY46wu5) ein, wie oft Sie Kopf (Wappen) geworfen haben.
+
+
+#### Frage
+
+- Was ist bei acht Würfen wahrscheinlicher: $4\times$ Kopf oder $8\times$ Kopf?
+
+## Hypothesenprüfung
+
+*Skeptische, kritische* Vermutung: Das nur $8$ von den $8+162=170$ Covid-19 Fällen aus der Impfgruppe kommen ist Zufall, eigentlich bringt die Impfung nichts. Aufgrund gleicher Gruppengröße entspricht dies mit $\pi$, der Wahrscheinlichkeit, dass ein Fall aus der Impfgruppe kommt der Hypothese:
+
+$$H_0: \pi_0 =0.5$$
+
+*Hinweis*: Die formulierte Hypothese in der Originalstudie und die Auswertung weichen ab.
+
+#### Fragen
+
+- Wie viel Geimpfte erwarten Sie unter den insgesamt $170$ Fällen, wenn die Nullhypothese stimmen würde?
+
+- Muss genau diese Anzahl rauskommen?
+
+- Wie groß wäre $\pi$, wenn der Impfstoff wirken würde?
+
+***
+
+Der Befehl `rflip()` simuliert den Münzwurf. 
+
+```{r}
+# Drei Simulation mit 170 Versuchen
+do(3) * rflip(n = 170)
+```
+
+Auch wenn $\pi=0.5$ stimmt kommen mal mehr oder weniger als 85x Kopf (`heads`, entspricht unser Anzahl Geimpfter unter den Fällen) in einem Experiment vor.
+
+Hier werden jetzt $10000$ Simulation der Anzahl Geimpfter unter den $170$ Fällen mit $\pi_0 =0.5$ durchgeführt:
+
+```{r}
+# Simulation Verteilung unter Nullypothese
+Nullvtlg <- do(10000) * rflip(n = 170)
+```
+
+In der Variable (Spalte) `heads` der Datentabelle `Nullvtlg` steht die zufällige Anzahl Geimpfter unter den simulierten Fällen (Zeile) von Daten, wenn die Nullhypothese stimmen würde.
+
+```{r}
+gf_bar( ~ heads, data = Nullvtlg) |>
+  gf_vline(xintercept = 8) |>
+  gf_labs(x = "Anzahl Geimpfter (unter 170 Fällen)",
+          y = "Anzahl Simulationen")
+```
+
+In keiner der $10000$ simulierten Stichproben unter dem Modell der Nullhypothese gab es $8$ oder weniger Geimpfte unter den Fällen. Daher: p-Wert $< \frac{1}{10000}$. Die Wahrscheinlichkeit des Ergebnisses der Stichprobe (8 (oder weniger) von 170 Fällen) ist sehr gering, wenn das Modell der Nullhypothese $H_0: \pi_0=0.5$ stimmen würde.
+
+*Hinweis*: Mathematisch haben wir Daten gemäß einer Binomialverteilung simuliert: $$Pr(Y=y | n, \pi) = \binom{n}{y} \cdot \pi \cdot (1-\pi)^{n-y}.$$ Konfidenzintervalle und p-Werte können hier auch über die Funktion `binom.test()` bestimmt werden:
+
+```{r}
+binom.test(8, 170, alternative = "less")
+```
+
+
+#### Fragen
+
+- Ein Ergebnis wird *statistisch signifikant zum Niveau $\alpha=5\%$* genannt, wenn der p-Wert kleiner als $\alpha$ ist. Ist dieses Ergebnis statistisch signifikant?
+
+- Angenommen es gilt $\pi<0.5$. Liegt dann ein Fehler vor? Und wenn ja, welcher Art?
+

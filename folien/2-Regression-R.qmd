@@ -1,0 +1,477 @@
+---
+title: "Lineare Regression mit R"
+subtitle: "Repetitorium Data-Literacy"  
+lang: de
+author: "Karsten Lübke"
+date: "`r Sys.Date()`"
+format: 
+  html:
+    toc: true
+    html-math-method: katex
+  pdf:
+    toc: true
+    number-sections: false
+    colorlinks: true
+    papersize: a4
+---
+
+# Lineare Regression
+
+## Fragestellung
+
+*Gleich und gleich gesellt sich gern?* Sind größere Frauen mit größeren Männern verheiratet?
+
+## Plan
+
+Es liegt eine Stichprobe von Größen (in cm) von Ehepartnern vor. Die Daten kommen aus dem Paket [openintro](https://cran.r-project.org/package=openintro) und stammen ursprünglich aus Hand (1994): *A handbook of small data sets*, Chapman & Hall/CRC.
+
+**Hinweis Datenbasis**:
+
+- Die Daten stammen aus einer Zeit in der das *klassische* Ehemodell (Mann/Frau) vorherrschend war. Seitdem hat sich die Gesellschaft weiterentwickelt.
+
+- Die vorgestellte Analyse ist methodisch-didaktisch motiviert.
+
+## Daten 
+
+Vorbereitung: Paket `mosaic` aktivieren:
+
+```{r}
+#| message: false
+library(mosaic)
+```
+
+`Ehe.csv` Datei von der `URL` (`https://t1p.de/ykm5c`) in `R` einlesen und dort `Ehe` zuweisen (`<-`):
+
+```{r}
+URL <- "https://t1p.de/ykm5c"
+Ehe <- read.csv2(URL)
+```
+
+Datenstruktur:
+  
+```{r}
+str(Ehe)
+```
+
+- `r nrow(Ehe)` Beobachtungen (Ehepaare)
+
+- `r ncol(Ehe)` Variablen:
+
+  - `mann`: Größe des Ehemanns (in cm)
+  - `frau`: Größe der Ehefrau (in cm)
+
+Erste Beobachtungen:
+```{r}
+head(Ehe)
+```
+
+## Explorative Datenanalyse 
+
+Für zwei *metrische* Variablen: Streudiagramm.
+
+Zeichne ein Streudiagramm (`gf_point()`), 
+auf die y-Achse die Variable `mann`, auf die x-Achse die Variable `frau`
+der Datentabelle `Ehe`. 
+Ergänzend:
+Passe Überschrift und Achsenbeschriftung an.
+
+```{r scatterplot}
+gf_point(mann ~ frau, 
+        data = Ehe) %>%
+  gf_labs(
+    title = "Ehepaare",
+    x = "Größe Frau", 
+    y = "Größe Mann")
+```
+
+Es scheint einen schwachen, positiven, linearen Zusammenhang zwischen der Größe der Ehefrau und der Größe des Ehemanns zu geben.
+
+Kennzahl für den linearen Zusammenhang zweier numerischer Variablen: **Korrelationskoeffizient** nach Pearson $r_{x,y}=\frac{\sum_{i=1}^n (x_i-\bar{x})(y_i-\bar{y})}{\sqrt{\sum_{i=1}^n (x_i-\bar{x})^2} \cdot \sqrt{\sum_{i=1}^n (y_i-\bar{y})^2}}$
+
+```{r}
+r <- cor(mann ~ frau, data = Ehe)
+r
+```
+
+Der Korrelationskoeffizient für die Größe der Ehepartner in der Stichprobe beträgt $r_{\text{Größe Frau},\text{Größe Mann}}=`r round (r,2)`$.
+
+## Lineare Regression in R
+
+Das R Objekt `erglm` soll sein (`<-`) das Ergebnis einer linearen Regression (Funktionsaufruf `lm()`) mit der Variable `mann` modelliert durch (`~`) die Variable `frau` aus der Datentabelle `Ehe`:
+
+```{r}
+erglm <- lm(mann ~ frau, data = Ehe)
+```
+
+## Regressionsgerade
+
+```{r lm}
+gf_point(mann ~ frau, 
+        data = Ehe) %>%
+  gf_lm() %>% #<<
+  gf_labs(
+    title = "Ehepaare",
+    x = "Größe Frau", 
+    y = "Größe Mann")
+```
+
+## Geschätzte Koeffizienten
+
+`coef()` gibt die geschätzten Koeffizienten $\color{violet} {\hat{\beta}_0}, \color{blue} {\hat{\beta}_1}$ der Regression `erglm` aus: 
+
+```{r}
+coef(erglm)
+```
+
+$$\color{olive} {\widehat{\text{Größe Ehemann}}} = \color{violet} {`r round(coef(erglm)[1],2)`} + \color{blue} {`r round(coef(erglm)[2],2)`} \cdot \color{purple} {\text{Größe Ehefrau}}$$
+
+## Interpretation
+
+$$\color{olive} {\widehat{\text{Größe Ehemann}}} = \color{violet} {`r round(coef(erglm)[1],2)`} + \color{blue} {`r round(coef(erglm)[2],2)`} \cdot \color{purple} {\text{Größe Ehefrau}}$$
+
+$\color{blue} {\hat{\beta}_1} = \color{blue} {`r round(coef(erglm)[2],2)`}$: Im linearen Modell der Stichprobe steigt der beobachtete Mittelwert der Größe des Ehemanns mit jedem cm Größe der beobachteten Größe der Ehefrau um $`r round(coef(erglm)[2],2)`$ cm.
+
+
+*Hinweis*: $\color{violet} {\hat{\beta}_0} = \color{violet} {`r round(coef(erglm)[1],2)`}$ ist eine Extrapolation (es gibt keine Frauen die $\color{purple} 0$ cm groß sind: ` min( ~ frau, data = Ehe)=``r min( ~ frau, data = Ehe)`. 
+
+## Bestimmtheitsmaß
+
+`rsquared()` gibt hier das Bestimmtheitsmaß $R^2$ der Regression `erglm` aus: 
+
+```{r}
+rsquared(erglm)
+```
+
+$R^2=`r round(rsquared(erglm),2)*100`\,\%$ der Varianz der abhängigen Variable $\color{olive} {\text{Größe Ehemann}}$ kann in der Stichprobe durch die unabhängige Variable $\color{purple} {\text{Größe Ehefrau}}$ linear modelliert werden.
+
+## Prognose
+
+Punktprognose für die Größe des Ehemanns einer Ehefrau, die $\color{purple} {165}$ cm groß ist. 
+
+```{r}
+x0 <- data.frame(frau = 165)
+predict(erglm, newdata = x0)
+```
+
+
+$$\color{olive} {\widehat{\text{Größe Ehemann}}} = \color{violet} {`r round(coef(erglm)[1],2)`} + \color{blue} {`r round(coef(erglm)[2],2)`} \cdot \color{purple} {165} = \color{olive} {`r round(predict(erglm, newdata = x0),2)`}$$
+Im Modell der Stichprobe sind Ehemänner von $\color{purple} {165}$ cm großen Ehefrauen im Mittelwert $\color{olive} {`r round(predict(erglm, newdata = x0),2)`}$ cm groß.
+
+## Prognoseintervall
+
+```{r predict}
+gf_point(mann ~ frau, 
+        data = Ehe) %>%
+  gf_lm(interval = #<<
+          "prediction" ) %>% #<<
+  gf_labs(
+    title = "Ehepaare",
+    x = "Größe Frau", 
+    y = "Größe Mann")
+```
+
+## Residualplot
+
+`residuals()` gibt die Residuen $\color{orange} {\hat{\epsilon}_i}$ aus, `fitted()` die angepassten Werte $\color{olive} {\hat{y}_i}$.
+
+```{r resid}
+gf_point(residuals(erglm) ~
+           fitted(erglm))
+```
+
+- Es ist kein Muster erkennbar.
+- Es sind keine Ausreißer erkennbar.
+
+## Schlussfolgerung
+
+**Frage**: Sind größere Frauen mit größeren Männern verheiratet?
+
+**Antwort**: In der Stichprobe gibt es eine positive Korrelation der Größe bei Ehepaaren von $r_{\text{Größe Frau},\text{Größe Mann}}=`r round (r,2)`$. Eine lineare Regression ergibt das Modell ${\widehat{\text{Größe Ehemann}}} =  {`r round(coef(erglm)[1],2)`} +  {`r round(coef(erglm)[2],2)`} \cdot  {\text{Größe Ehefrau}}$. Das Bestimmtheitsmaß beträgt $R^2=`r round(rsquared(erglm),2)`$. 
+
+# Ergänzung: Lineare Regression mit kategorialer unabhängiger Variable
+
+## Fragestellung
+
+Wie groß ist der Größenunterschied zwischen Männern und Frauen?
+
+*Hinweis*: Hier soll der allgemeine Größenunterschied zwischen Männern und Frauen in der Datentabelle analysiert werden, nicht der innerhalb eines Ehepaars. 
+
+*Hinweis*: Die Beobachtungen sind aufgrund der Ehe nicht unabhängig.
+
+## Datenvorverarbeitung
+
+Die Daten liegen im *breiten* Format vor, d.h. die Variablen der Größe `mann` und `frau` stehen nebeneinander. Zur Analyse dieser Fragestellung ist das *lange* Format praktischer: Eine Variable `geschlecht`, eine Variable `groesse`.
+
+```{r, message=FALSE}
+# Evtl. vorab: install.packages("tidyr") 
+library(tidyr)
+
+Ehe_L <- Ehe %>%
+  pivot_longer(cols = c("mann", "frau"),
+               names_to = "geschlecht",
+               values_to = "groesse")
+```
+
+## Datentabellen
+
+```{r}
+head(Ehe)
+```
+
+```{r}
+head(Ehe_L)
+```
+
+*Hinweis*: `tibble` ist eine moderne Variante einer Datentabelle (`data.frame`) und kann wie diese analysiert werden.
+
+## Lineare Regression
+
+```{r}
+erglm <- lm(groesse ~ geschlecht, data = Ehe_L)
+coef(erglm)
+```
+
+$$\color{olive} {\widehat{\text{groesse}_i}}=\color{violet} {`r round(coef(erglm)[1],2)`} + \color{blue} {`r round(coef(erglm)[2],2)`} \cdot  \color{purple}{\begin{cases}1: \,\text{i ist Mann} \\ 0: \,\text{i ist kein Mann}\end{cases}}$$
+D.h., für die arithemtischen Mittelwerte $\color{olive}{\bar{y}}_{\color{purple}{x}}$ gilt:
+
+$\color{olive}{\overline{\text{groesse}}}_{\color{purple}{\text{frau}}}=\color{violet}{\hat{\beta_0}}=`r round(coef(erglm)[1],2)`$
+
+$\color{olive}{\overline{\text{groesse}}}_{\color{purple}{\text{mann}}}=\color{violet}{\hat{\beta_0}}+\color{blue}{\hat{\beta}_{\text{mann}}}=\color{violet}{`r round(coef(erglm)[1],2)`}+\color{blue} {`r round(coef(erglm)[2],2)`}=`r round(coef(erglm)[1]+coef(erglm)[2],2)`$
+
+*Hinweis*: $\color{blue}{\hat{\beta}} \cdot \color{purple}{x}$ ist bei metrischen Variablen $\color{purple}{x}$ eine Art *Dimmer* für den Wert von $\color{olive}{\hat{y}}$. Bei kategorialen Variablen $\color{purple}{x}$ ist es hingegen eine Art *Schalter*.
+
+## Schlussfolgerung
+
+**Frage**: Wie groß ist der Größenunterschied zwischen Männern und Frauen?
+
+**Antwort**: In der Stichprobe der Ehepaare ergibt sich ${\overline{\text{groesse}}}_{{\text{frau}}}=`r round(coef(erglm)[1],2)`$cm und 
+${\overline{\text{groesse}}}_{\text{mann}}=`r round(coef(erglm)[1]+coef(erglm)[2],2)`$cm, d.h. ein Unterschied im Mittelwert von ${\overline{\text{groesse}}}_{\text{mann}}-{\overline{\text{groesse}}}_{{\text{frau}}}={\hat{\beta}_{\text{mann}}}=`r round(coef(erglm)[2],2)`$cm.
+
+Alternative Modellierung über Differenz innerhalb der Ehepaare: `lm(I(mann-frau) ~ 1, data = Ehe)`
+
+# Simulation des Ziehens einer Stichprobe
+
+## Unsicherheit und Variation
+
+```{r}
+erglm <- lm(mann ~ frau, data = Ehe)
+```
+
+Was wäre, wenn wir eine andere zufällige Stichprobe gehabt hätten, als die, die wir gehabt haben?
+
+<br>
+
+Wir hätten andere geschätzte Koeffizienten $\hat{\beta_0}, \hat{\beta}_1$ erhalten als die, die wir haben.
+
+<br>
+
+Wie anders?
+
+## Variation durch Re-Sampling
+
+Koeffizienten Originalstichprobe:
+
+```{r}
+do(1) * lm(mann ~ frau, 
+           data = Ehe)
+```
+
+*Hinweis*: `do(1) * `: der folgende Befehl soll 1x wiederholt werden.
+
+Koeffizienten in $3$ zufälligen Re-Samples:
+
+```{r}
+do(3) * lm(mann ~ frau, 
+         data = resample(Ehe))
+```
+
+Die geschätzten Koeffizienten $\color{blue} {\hat{\beta}_1}$ variieren mit den Re-Samples.
+
+## Bootstrapping
+
+```
+Setze den Zufallszahlengenerator
+Bootvtlg soll sein
+  Wiederhole 10000x
+  Rechne Lineare Regression
+  eines Re-Samples
+```
+
+```{r}
+set.seed(1896)
+Bootvtlg <- 
+  do(10000) *
+  lm(mann ~ frau,
+     data = resample(Ehe))
+```
+
+## Datentabelle Simulation
+
+Die erzeugte Datentabelle `Bootvtlg` enthält (u.a.) die geschätzten Steigungen $\color{blue} {\hat{\beta}_1}$ (Variable, Spalte `frau`) der $10000$ Re-Samples (Zeilen):
+
+```{r}
+head(Bootvtlg)
+```
+
+## Bootstrap-Verteilung
+
+Die Verteilung der geschätzten Steigung von $\color{blue} {\hat{\beta}_1}$ bei zufälligen Stichproben wird durch die Verteilung der Steigung in den Re-Samples geschätzt:
+
+```{r histboot}
+gf_histogram( ~ frau, 
+              data = Bootvtlg, 
+              bins = 20, 
+              center = coef(erglm)[2])
+```
+
+Die geschätzten Steigungen in den Re-Samples verteilen sich um die Steigung in der Stichprobe: $\color{blue} {\hat{\beta}_1}=$ `coef(erglm)[2])` $=`r round(coef(erglm)[2],2)`$. 
+
+*Hinweis*: Das 1. Element des Koeffizientenvektors (`coef(erglm)[1]`) ist der Achsenabschnitt.
+
+## Standardfehler
+
+- Die Präzision einer Schätzung (hier: $\color{blue} {\hat{\beta}_1}$) wird über die Standardabweichung dieser gemessen und **Standardfehler** genannt.
+
+- Schätzung über die Standardabweichung (`sd()`) der Steigung (`frau`) der (simulierten) `Bootvtlg`:
+
+```{r}
+se <- sd( ~ frau, data = Bootvtlg)
+se
+```
+
+$\widehat{se} = `r round(se,2)`$.
+
+## Visualisierung Unsicherheit
+
+```{r visuconf}
+gf_point(mann ~ frau, 
+        data = Ehe) %>%
+  gf_lm(interval = "confidence") %>% #<<
+  gf_labs(
+    title = "Ehepaare",
+    x = "Größe Frau", 
+    y = "Größe Mann")
+```
+
+# Simulation Nullmodell
+
+## Unsicherheit und Variation
+
+```{r}
+erglm <- lm(mann ~ frau, data = Ehe)
+```
+
+Was wäre, wenn es gar keinen Zusammenhang geben würde?
+
+<br>
+
+Dann wäre im Modell der Population $\color{blue} {\beta_1}=0$.
+
+<br>
+
+Aber in einer Stichprobe könnte trotzdem zufällig $\color{blue} {\hat{\beta}_1} \neq 0$ beobachtet werden.
+
+## Ergebnis Stichprobe
+
+Koeffizienten Stichprobe:
+
+```{r}
+do(1) * lm(mann ~ 
+             frau,
+           data = Ehe) 
+```
+
+## Simulierte Stichproben
+
+Koeffizienten in simulierten Stichproben, für die $\color{blue} {\beta_1}=0$ gilt:
+
+```{r}
+do(3) * lm(mann ~ 
+             shuffle(frau),
+         data = Ehe)
+```
+
+## Simulation
+
+```
+Setze den Zufallszahlengenerator
+Nullvtlg soll sein
+  Wiederhole 10000x
+  Rechne Lineare Regression
+  wobei die Variable frau durchgemischt wird
+```
+
+```{r}
+set.seed(1896)
+Nullvtlg <- 
+  do(10000) *
+  lm(mann ~ 
+       shuffle(frau),
+     data = Ehe)
+```
+
+## Datentabelle Simulation
+
+Die erzeugte Datentabelle `Nullvtlg` enthält (u.a.) die geschätzten Steigungen $\color{blue} {\hat{\beta}_1}$ (Variable, Spalte `frau`) der $10000$ simulierten Stichproben unter der Annahme $\color{blue} {\beta_1}=0$.
+
+```{r}
+head(Nullvtlg)
+```
+
+## Permutations-Verteilung
+
+Die Verteilung der geschätzten Steigung von $\color{blue} {\hat{\beta}_1}$ bei Simulationen mit $H_0: \color{blue} {{\beta}_1}=0$ wird mit der Steigung in der Stichprobe verglichen: 
+
+```{r histnull}
+gf_histogram( ~ frau, 
+              data = Nullvtlg, 
+              bins = 20, 
+              center = 0) %>%
+  gf_vline(xintercept = 
+             ~ coef(erglm)[2])
+```
+
+Die geschätzten Steigungen in den simulierten Stichproben verteilen sich um die Steigung im Modell der Nullhpothese $\color{blue} {{\beta}_1}=0$.
+
+```{r, echo=FALSE}
+# Berechne den Anteil (`prop()`) der simulierten Stichproben (`Nullvtlg`), 
+# in denen der Betrag (`abs()`) der Steigung (`frau`) 
+# mindestens so groß (`>=`) ist wie 
+# der Betrag der Steigung in der Stichprobe (`coef(erglm)[2]`):
+p_wert <- prop( 
+  ~ abs(frau) >= 
+       abs(coef(erglm)[2]), 
+  data = Nullvtlg)
+```
+
+## Zusammenfassung in R
+
+`summary()` gibt eine Zusammenfassung des Regressionsergebnisses `erglm` aus:
+
+```{r}
+summary(erglm)
+```
+
+Ausgewähte Elemente der `summary()` eines `lm()`-Objektes:
+
+- Tabelle `Coefficients`:
+
+  - `Estimate`: Geschätzte Koeffizienten $\hat{\beta}_i$.
+  - `Std. Error`: Geschätzter Standardfehler $se$.
+  - `Pr(>|t|)`: (Parametrische) p-Werte für $H_0: \beta_i = 0$.
+  
+- `Multiple R-squared`: $R^2$.
+- `p-value`: p-Wert für $H_0: \beta_1 = \beta_2 = \ldots = 0$.
+
+
+## Schlussfolgerung
+
+**Frage**: Sind größere Frauen mit größeren Männern verheiratet?
+
+**Antwort**: Eine lineare Regression ergibt das Modell $${\widehat{\text{Größe Mann}}} =  {`r round(coef(erglm)[1],2)`} +  {`r round(coef(erglm)[2],2)`} \cdot  {\text{Größe Frau}}.$$ 
+
+Das Bestimmtheitsmaß beträgt $R^2=`r round(rsquared(erglm),2)`$. 
+
+Mit einem p-Wert von $`r p_wert`$ ist das Ergebnis der Stichprobe eher unwahrscheinlich, wenn $H_0: \beta_{\text{Größe Frau}}=0$ gelten würde. Daher gibt es berechtigte Zweifel daran, dass diese Hypothese stimmt.
+
+**Hinweis**: Beachten Sie die Limitationen der Daten! (*Externe Validität*)
