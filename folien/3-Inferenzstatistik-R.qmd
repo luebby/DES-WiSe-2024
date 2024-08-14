@@ -1,9 +1,8 @@
 ---
 title: "Inferenzstatistik"
-subtitle: "Repetitorium Data-Literacy"  
-lang: de
 author: "Karsten Lübke"
-date: "`r Sys.Date()`"
+lang: de
+date: today
 format: 
   html:
     toc: true
